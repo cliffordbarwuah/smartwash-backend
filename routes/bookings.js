@@ -120,14 +120,17 @@ async function sendCompletionSMS(phone, name, service) {
     if (cleanPhone.startsWith('0')) cleanPhone = '233' + cleanPhone.slice(1);
     if (!cleanPhone.startsWith('233')) cleanPhone = '233' + cleanPhone;
     const firstName = name.split(' ')[0];
-    const message = `Hi ${firstName}! Your car wash is DONE! 🚗✨\nService: ${service}\nYour vehicle is ready for pickup.\nThank you for choosing Smart Wash Ghana!\nQuestions? Call: +233 54 292 9661`;
-    const response = await fetch('https://sms.arkesel.com/sms/api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'send-sms', api_key: apiKey, to: cleanPhone, from: 'SmartWash', sms: message })
+    const message = `Hi ${firstName}! Your car wash is DONE! Your ${service} is complete and your vehicle is ready for pickup. Thank you for choosing Smart Wash Ghana! Questions? Call: +233 54 292 9661`;
+    const params = new URLSearchParams({
+      action: 'send-sms',
+      api_key: apiKey,
+      to: cleanPhone,
+      from: 'SmartWash',
+      sms: message
     });
-    const data = await response.json();
-    console.log('Completion SMS sent:', data);
+    const response = await fetch(`https://sms.arkesel.com/sms/api?${params.toString()}`);
+    const text = await response.text();
+    console.log('Completion SMS result:', text);
   } catch (err) {
     console.error('Completion SMS error:', err.message);
   }
