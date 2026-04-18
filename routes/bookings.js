@@ -112,6 +112,28 @@ async function sendSMS(phone, name, service, date, time) {
 }
 
 // POST /api/bookings — PUBLIC
+// ── COMPLETION SMS ──
+async function sendCompletionSMS(phone, name, service) {
+  try {
+    const apiKey = process.env.ARKESEL_API_KEY || 'Vk1CZmdoRHVvSFNka2dQY3JvcFY';
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '233' + cleanPhone.slice(1);
+    if (!cleanPhone.startsWith('233')) cleanPhone = '233' + cleanPhone;
+    const firstName = name.split(' ')[0];
+    const message = `Hi ${firstName}! Your car wash is DONE! 🚗✨\nService: ${service}\nYour vehicle is ready for pickup.\nThank you for choosing Smart Wash Ghana!\nQuestions? Call: +233 54 292 9661`;
+    const response = await fetch('https://sms.arkesel.com/sms/api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send-sms', api_key: apiKey, to: cleanPhone, from: 'SmartWash', sms: message })
+    });
+    const data = await response.json();
+    console.log('Completion SMS sent:', data);
+  } catch (err) {
+    console.error('Completion SMS error:', err.message);
+  }
+}
+
+
 router.post('/', async (req, res) => {
   try {
     const { name, phone, email, carType, service, date, time, notes } = req.body;
@@ -182,6 +204,10 @@ router.patch('/:id/status', authMiddleware, async (req, res) => {
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
     const io = req.app.get('io');
     io.to('admin-room').emit('booking-updated', { booking });
+    // Send SMS to customer when job is completed
+    if (status === 'completed') {
+      sendCompletionSMS(booking.phone, booking.name, booking.service);
+    }
     res.json({ booking });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
